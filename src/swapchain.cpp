@@ -10,6 +10,18 @@
 
 #define VSYNC CONFIG_VSYNC
 
+#if not defined(_WIN32) and not defined(__APPLE__)
+#if defined __has_attribute
+#if __has_attribute (weak)
+// Define weak symbols to allow linking even if GLFW was built without support for one of X11 or Wayland.
+struct wl_display* glfwGetWaylandDisplay(void) __attribute__((weak));
+struct wl_surface* glfwGetWaylandWindow(GLFWwindow *window) __attribute__((weak));
+Display* glfwGetX11Display(void) __attribute__((weak));
+Window glfwGetX11Window(GLFWwindow* window) __attribute__((weak));
+#endif
+#endif
+#endif // Neither _WIN32 nor __APPLE__
+
 VkSurfaceKHR createSurface(VkInstance instance, GLFWwindow* window)
 {
 	// Note: GLFW has a helper glfwCreateWindowSurface but we're going to do this the hard way to reduce our reliance on GLFW Vulkan specifics
@@ -28,6 +40,7 @@ VkSurfaceKHR createSurface(VkInstance instance, GLFWwindow* window)
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 	if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
 	{
+		printf("Running under Wayland\n");
 		VkWaylandSurfaceCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR };
 		createInfo.display = glfwGetWaylandDisplay();
 		createInfo.surface = glfwGetWaylandWindow(window);
@@ -38,6 +51,7 @@ VkSurfaceKHR createSurface(VkInstance instance, GLFWwindow* window)
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 	if (glfwGetPlatform() == GLFW_PLATFORM_X11)
 	{
+		printf("Running under X11\n");
 		VkXlibSurfaceCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
 		createInfo.dpy = glfwGetX11Display();
 		createInfo.window = glfwGetX11Window(window);
